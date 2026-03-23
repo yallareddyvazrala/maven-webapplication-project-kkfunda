@@ -59,13 +59,7 @@ pipeline
         """
               }
            }
-           stage('airtel-uat')
-           {
-              steps
-              {
-                 build job: 'airtel-uat'  //This down stream job
-              }
-           }
+         
 
    }  //stages ending
 } // pipeline ending
