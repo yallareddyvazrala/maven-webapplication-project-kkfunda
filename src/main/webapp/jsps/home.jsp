@@ -46,7 +46,7 @@
 <body>
 
 <header>
-    <h1>🚀 I am Happay 🚀</h1>
+    <h1>🚀 I am Happy 🚀</h1>
     <h3>Training | Development | Consulting</h3>
 </header>
 
