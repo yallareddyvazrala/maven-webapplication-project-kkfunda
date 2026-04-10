@@ -74,26 +74,44 @@ pipeline {
         }
     }
 
-    post {
-        success {
+   post {
+
+    success {
+        script {
+            def msg = ""
+            
+            if (env.BRANCH_NAME == 'development') {
+                msg = "✅ DEV SUCCESS: ${env.JOB_NAME} #${env.BUILD_NUMBER}\nBranch: ${env.BRANCH_NAME}\nFull CI/CD executed\n${env.BUILD_URL}"
+            } 
+            else if (env.BRANCH_NAME == 'main') {
+                msg = "✅ MAIN SUCCESS: ${env.JOB_NAME} #${env.BUILD_NUMBER}\nBranch: ${env.BRANCH_NAME}\nBuild + Sonar only\n${env.BUILD_URL}"
+            } 
+            else {
+                msg = "✅ SUCCESS: ${env.JOB_NAME} #${env.BUILD_NUMBER}\nBranch: ${env.BRANCH_NAME}\n${env.BUILD_URL}"
+            }
+
             slackSend(
                 channel: "${SLACK_CHANNEL}",
                 color: "good",
-                message: "SUCCESS: ${env.JOB_NAME} #${env.BUILD_NUMBER} (${env.BRANCH_NAME}) - ${env.BUILD_URL}"
+                message: msg
             )
         }
+    }
 
-        failure {
+    failure {
+        script {
+            def msg = "❌ FAILED: ${env.JOB_NAME} #${env.BUILD_NUMBER}\nBranch: ${env.BRANCH_NAME}\n${env.BUILD_URL}"
+
             slackSend(
                 channel: "${SLACK_CHANNEL}",
                 color: "danger",
-                message: "FAILED: ${env.JOB_NAME} #${env.BUILD_NUMBER} (${env.BRANCH_NAME}) - ${env.BUILD_URL}"
+                message: msg
             )
         }
+    }
 
-        always {
-            echo "Pipeline completed for branch: ${env.BRANCH_NAME}"
-        }
+    always {
+        echo "Pipeline completed for branch: ${env.BRANCH_NAME}"
     }
 }
 
