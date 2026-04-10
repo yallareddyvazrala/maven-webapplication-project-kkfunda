@@ -76,57 +76,46 @@ pipeline {
     }
 
     post {
+    always {
+        script {
+            def status = currentBuild.currentResult
+            def color = (status == 'SUCCESS') ? 'good' : 'danger'
+            def msg = ""
 
-        success {
-            script {
-                def msg = ""
-
-                if (env.BRANCH_NAME == 'development') {
-                    msg = """✅ DEV SUCCESS
+            if (env.BRANCH_NAME == 'development') {
+                msg = """${status == 'SUCCESS' ? '✅' : '❌'} DEV ${status}
 Job: ${env.JOB_NAME} #${env.BUILD_NUMBER}
 Branch: ${env.BRANCH_NAME}
 Flow: Full CI/CD
 URL: ${env.BUILD_URL}"""
-                } 
-                else if (env.BRANCH_NAME == 'main') {
-                    msg = """✅ MAIN SUCCESS
+            } 
+            else if (env.BRANCH_NAME == 'main') {
+                msg = """${status == 'SUCCESS' ? '✅' : '❌'} MAIN ${status}
 Job: ${env.JOB_NAME} #${env.BUILD_NUMBER}
 Branch: ${env.BRANCH_NAME}
 Flow: Build + Sonar
 URL: ${env.BUILD_URL}"""
-                } 
-                else {
-                    msg = """✅ SUCCESS
+            } 
+            else if (env.BRANCH_NAME.startsWith('feature')) {
+                msg = """${status == 'SUCCESS' ? '✅' : '❌'} FEATURE ${status}
+Job: ${env.JOB_NAME} #${env.BUILD_NUMBER}
+Branch: ${env.BRANCH_NAME}
+Flow: Feature Build
+URL: ${env.BUILD_URL}"""
+            } 
+            else {
+                msg = """${status == 'SUCCESS' ? '✅' : '❌'} ${status}
 Job: ${env.JOB_NAME} #${env.BUILD_NUMBER}
 Branch: ${env.BRANCH_NAME}
 URL: ${env.BUILD_URL}"""
-                }
-
-                slackSend(
-                    channel: "${SLACK_CHANNEL}",
-                    color: "good",
-                    message: msg
-                )
             }
-        }
 
-        failure {
-            script {
-                def msg = """❌ FAILED
-Job: ${env.JOB_NAME} #${env.BUILD_NUMBER}
-Branch: ${env.BRANCH_NAME}
-URL: ${env.BUILD_URL}"""
-
-                slackSend(
-                    channel: "${SLACK_CHANNEL}",
-                    color: "danger",
-                    message: msg
-                )
-            }
-        }
-
-        always {
-            echo "Pipeline completed for branch: ${env.BRANCH_NAME}"
+            slackSend(
+                channel: "${SLACK_CHANNEL}",
+                color: color,
+                message: msg
+            )
         }
     }
+}
 }
