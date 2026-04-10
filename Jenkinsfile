@@ -17,7 +17,8 @@ pipeline {
 
         stage('Git Clone') {
             steps {
-                git 'https://github.com/yallareddyvazrala/maven-webapplication-project-kkfunda.git'
+                git branch: "${env.BRANCH_NAME}",
+                    url: 'https://github.com/yallareddyvazrala/maven-webapplication-project-kkfunda.git'
             }
         }
 
@@ -65,53 +66,67 @@ pipeline {
             steps {
                 sshagent(['ec-user']) {
                     sh """
-                    scp -o StrictHostKeyChecking=no \
-                    target/maven-web-application.war \
-                    ec2-user@65.0.173.83:/opt/apache-tomcat-9.0.117/webapps/
+                        scp -o StrictHostKeyChecking=no \
+                        target/maven-web-application.war \
+                        ec2-user@65.0.173.83:/opt/apache-tomcat-9.0.117/webapps/
                     """
                 }
             }
         }
     }
 
-   post {
+    post {
 
-    success {
-        script {
-            def msg = ""
-            
-            if (env.BRANCH_NAME == 'development') {
-                msg = "✅ DEV SUCCESS: ${env.JOB_NAME} #${env.BUILD_NUMBER}\nBranch: ${env.BRANCH_NAME}\nFull CI/CD executed\n${env.BUILD_URL}"
-            } 
-            else if (env.BRANCH_NAME == 'main') {
-                msg = "✅ MAIN SUCCESS: ${env.JOB_NAME} #${env.BUILD_NUMBER}\nBranch: ${env.BRANCH_NAME}\nBuild + Sonar only\n${env.BUILD_URL}"
-            } 
-            else {
-                msg = "✅ SUCCESS: ${env.JOB_NAME} #${env.BUILD_NUMBER}\nBranch: ${env.BRANCH_NAME}\n${env.BUILD_URL}"
+        success {
+            script {
+                def msg = ""
+
+                if (env.BRANCH_NAME == 'development') {
+                    msg = """✅ DEV SUCCESS
+Job: ${env.JOB_NAME} #${env.BUILD_NUMBER}
+Branch: ${env.BRANCH_NAME}
+Flow: Full CI/CD
+URL: ${env.BUILD_URL}"""
+                } 
+                else if (env.BRANCH_NAME == 'main') {
+                    msg = """✅ MAIN SUCCESS
+Job: ${env.JOB_NAME} #${env.BUILD_NUMBER}
+Branch: ${env.BRANCH_NAME}
+Flow: Build + Sonar
+URL: ${env.BUILD_URL}"""
+                } 
+                else {
+                    msg = """✅ SUCCESS
+Job: ${env.JOB_NAME} #${env.BUILD_NUMBER}
+Branch: ${env.BRANCH_NAME}
+URL: ${env.BUILD_URL}"""
+                }
+
+                slackSend(
+                    channel: "${SLACK_CHANNEL}",
+                    color: "good",
+                    message: msg
+                )
             }
-
-            slackSend(
-                channel: "${SLACK_CHANNEL}",
-                color: "good",
-                message: msg
-            )
         }
-    }
 
-    failure {
-        script {
-            def msg = "❌ FAILED: ${env.JOB_NAME} #${env.BUILD_NUMBER}\nBranch: ${env.BRANCH_NAME}\n${env.BUILD_URL}"
+        failure {
+            script {
+                def msg = """❌ FAILED
+Job: ${env.JOB_NAME} #${env.BUILD_NUMBER}
+Branch: ${env.BRANCH_NAME}
+URL: ${env.BUILD_URL}"""
 
-            slackSend(
-                channel: "${SLACK_CHANNEL}",
-                color: "danger",
-                message: msg
-            )
+                slackSend(
+                    channel: "${SLACK_CHANNEL}",
+                    color: "danger",
+                    message: msg
+                )
+            }
         }
-    }
 
-    always {
-        echo "Pipeline completed for branch: ${env.BRANCH_NAME}"
+        always {
+            echo "Pipeline completed for branch: ${env.BRANCH_NAME}"
+        }
     }
 }
-
